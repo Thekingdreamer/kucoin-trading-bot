@@ -3,10 +3,18 @@ import pandas as pd
 import numpy as np
 from kucoin.client import Client
 
-# Configura tus credenciales de API de KuCoin
-api_key = 'tu_api_key'
-api_secret = 'tu_api_secret'
-api_passphrase = 'tu_api_passphrase'
+from dotenv import load_dotenv
+import os
+
+# Cargar las variables del archivo .env
+load_dotenv()
+
+# Obtener las credenciales de la API de KuCoin desde las variables de entorno
+api_key = os.getenv('deepseek')
+api_secret = os.getenv('66ac3eab-5f9e-40fb-9701-5f4ee4ef1ea0')
+api_passphrase = os.getenv('6798595dee26850001553c80')
+
+# Ahora puedes usar api_key, api_secret y api_passphrase en tu código
 
 client = Client(api_key, api_secret, api_passphrase)
 
