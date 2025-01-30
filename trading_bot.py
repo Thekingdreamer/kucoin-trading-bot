@@ -1,9 +1,20 @@
 import time
 import pandas as pd
 import numpy as np
-from kucoin.client import Client
 from dotenv import load_dotenv
+from kucoin.market.market import MarketData
+from kucoin.trade.trade import TradeData
+from kucoin.user.user import UserData
+
 import os
+
+# Instanciar las clases adecuadas
+market = MarketData()
+trade = TradeData()
+user = UserData()
+
+# Probar una solicitud, por ejemplo, obtener datos de mercado
+print(market.get_ticker('BTC-USDT'))
 
 # Cargar variables de entorno
 load_dotenv()
