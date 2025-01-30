@@ -2,50 +2,54 @@ import time
 import pandas as pd
 import numpy as np
 from kucoin.client import Client
-
 from dotenv import load_dotenv
 import os
 
-# Cargar las variables del archivo .env
+# Cargar variables de entorno
 load_dotenv()
 
-# Obtener las credenciales de la API de KuCoin desde las variables de entorno
-api_key = os.getenv('deepseek')
-api_secret = os.getenv('66ac3eab-5f9e-40fb-9701-5f4ee4ef1ea0')
-api_passphrase = os.getenv('6798595dee26850001553c80')
+# Configurar cliente de KuCoin (con nombres de variables corregidos)
+client = Client(
+    api_key=os.getenv('KUCOIN_API_KEY'),
+    api_secret=os.getenv('KUCOIN_API_SECRET'),
+    api_passphrase=os.getenv('KUCOIN_API_PASSPHRASE')  # Corregido el nombre de la variable
+)
 
-# Ahora puedes usar api_key, api_secret y api_passphrase en tu código
-
-client = Client(api_key, api_secret, api_passphrase)
-
-# Prueba de conexión
-try:
-    account_info = client.get_account_list()  # Ejemplo de prueba
-    print("Conexión exitosa con KuCoin:", account_info)
-except Exception as e:
-    print("Error conectando con KuCoin:", e)
-
+# Función para calcular RSI mejorada
 def calcular_rsi(data, periodo=14):
     delta = data['close'].diff()
     ganancias = delta.clip(lower=0)
     perdidas = -delta.clip(upper=0)
-    avg_ganancia = ganancias.rolling(periodo).mean()
-    avg_perdida = perdidas.rolling(periodo).mean()
+    
+    # Usar promedio móvil exponencial
+    avg_ganancia = ganancias.ewm(alpha=1/periodo, adjust=False).mean()
+    avg_perdida = perdidas.ewm(alpha=1/periodo, adjust=False).mean()
+    
     rs = avg_ganancia / avg_perdida
     return 100 - (100 / (1 + rs))
 
+# Función para calcular ATR mejorada
 def calcular_atr(data, periodo=14):
     high_low = data['high'] - data['low']
     high_close = np.abs(data['high'] - data['close'].shift())
     low_close = np.abs(data['low'] - data['close'].shift())
+    
     tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
     return tr.rolling(periodo).mean()
 
-def estrategia_trading(symbol="BTC-USDT"):
+# Estrategia principal con mejor manejo de errores
+def ejecutar_estrategia(symbol="BTC-USDT"):
     try:
         # Obtener datos históricos
         velas = client.get_kline_data(symbol=symbol, interval="1day")
-        df = pd.DataFrame(velas, columns=["timestamp", "open", "close", "high", "low", "volume"])
+        
+        # Crear DataFrame con nombres de columnas correctos
+        df = pd.DataFrame(velas, columns=[
+            'timestamp', 'open', 'high', 'low', 'close', 'volume', 'turnover'
+        ])
+        
+        # Conversión de tipos de datos
+        df = df.apply(pd.to_numeric)
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
         
         # Calcular indicadores
@@ -54,27 +58,38 @@ def estrategia_trading(symbol="BTC-USDT"):
         df['RSI'] = calcular_rsi(df)
         df['ATR'] = calcular_atr(df)
         
-        # Últimos valores
-        ultimo_precio = df['close'].iloc[-1]
-        ma50 = df['MA50'].iloc[-1]
-        ma200 = df['MA200'].iloc[-1]
-        rsi = df['RSI'].iloc[-1]
-        atr = df['ATR'].iloc[-1]
+        # Filtrar datos válidos
+        if len(df.dropna()) < 50:
+            raise ValueError("Datos insuficientes para análisis")
+            
+        # Obtener últimos valores
+        ultimo = df.iloc[-1]
         
         # Lógica de trading
-        if (ma50 > ma200) and (rsi < 70):
-            # Señal de COMPRA
-            stop_loss = ultimo_precio - (atr * 1.5)
-            print(f"🚀 COMPRAR {symbol} | Precio: {ultimo_precio} | Stop Loss: {stop_loss}")
+        if ultimo['MA50'] > ultimo['MA200'] and ultimo['RSI'] < 70:
+            stop_loss = ultimo['close'] - (ultimo['ATR'] * 1.5)
+            return f"🚀 COMPRAR {symbol} | Precio: {ultimo['close']:.2f} | Stop Loss: {stop_loss:.2f}"
             
-        elif (ma50 < ma200) and (rsi > 30):
-            # Señal de VENTA
-            print(f"🔴 VENDER {symbol} | Precio: {ultimo_precio}")
+        elif ultimo['MA50'] < ultimo['MA200'] and ultimo['RSI'] > 30:
+            return f"🔴 VENDER {symbol} | Precio: {ultimo['close']:.2f}"
             
+        return "🟡 Mantener posición actual"
+        
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        return f"❌ Error en estrategia: {str(e)}"
 
+# Ejecutar en ciclo continuo
 if __name__ == "__main__":
     while True:
-        estrategia_trading()
-        time.sleep(86400)  # Ejecutar cada 24 horas
+        try:
+            señal = ejecutar_estrategia()
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {señal}")
+            time.sleep(3600)  # Esperar 1 hora entre ejecuciones
+            
+        except KeyboardInterrupt:
+            print("\n🔧 Ejecución detenida por el usuario")
+            break
+            
+        except Exception as e:
+            print(f"⚠️ Error general: {str(e)}")
+            time.sleep(300)  # Esperar 5 minutos ante errores
