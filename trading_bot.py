@@ -1,3 +1,4 @@
+import os
 import time
 import pandas as pd
 import numpy as np
@@ -6,25 +7,20 @@ from kucoin.market.market import MarketData
 from kucoin.trade.trade import TradeData
 from kucoin.user.user import UserData
 
-import os
+# Cargar las claves desde el archivo .env
+load_dotenv()
+api_key = os.getenv("KUCOIN_API_KEY")
+api_secret = os.getenv("KUCOIN_API_SECRET")
+api_passphrase = os.getenv("KUCOIN_API_PASSPHRASE")
 
-# Instanciar las clases adecuadas
-market = MarketData()
-trade = TradeData()
-user = UserData()
+# Instanciar las clases con autenticación
+market = MarketData(api_key, api_secret, api_passphrase)
+trade = TradeData(api_key, api_secret, api_passphrase)
+user = UserData(api_key, api_secret, api_passphrase)
 
 # Probar una solicitud, por ejemplo, obtener datos de mercado
 print(market.get_ticker('BTC-USDT'))
 
-# Cargar variables de entorno
-load_dotenv()
-
-# Configurar cliente de KuCoin (con nombres de variables corregidos)
-client = Client(
-    api_key=os.getenv('KUCOIN_API_KEY'),
-    api_secret=os.getenv('KUCOIN_API_SECRET'),
-    api_passphrase=os.getenv('KUCOIN_API_PASSPHRASE')  # Corregido el nombre de la variable
-)
 
 # Función para calcular RSI mejorada
 def calcular_rsi(data, periodo=14):
