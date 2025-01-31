@@ -6,7 +6,9 @@ from kucoin.trade import TradeData
 load_dotenv()
 
 # Leer las claves API desde el entorno
-client = TradeData(API_KEY, API_SECRET, API_PASSPHRASE)
+API_KEY = os.getenv("KUCOIN_API_KEY")
+API_SECRET = os.getenv("KUCOIN_API_SECRET")
+API_PASSPHRASE = os.getenv("KUCOIN_API_PASSPHRASE")
 
 # Verificar que las claves se cargaron correctamente (esto es solo para pruebas, luego puedes quitarlo)
 print("API_KEY:", API_KEY)
@@ -14,7 +16,7 @@ print("API_SECRET:", API_SECRET)
 print("API_PASSPHRASE:", API_PASSPHRASE)
 
 # Inicializar el cliente de KuCoin
-client = Client(API_KEY, API_SECRET, API_PASSPHRASE)
+client = TradeData(API_KEY, API_SECRET, API_PASSPHRASE)
 
 # Prueba de conexión
 try:
