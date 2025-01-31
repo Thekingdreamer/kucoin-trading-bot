@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from kucoin.client import Client
+from kucoin.trade import TradeData
 
 # Cargar las variables desde el .env
 load_dotenv()
