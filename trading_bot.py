@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from kucoin.trade import TradeData
+from kucoin.client import Trade
 
 # Cargar las variables desde el .env
 load_dotenv()
@@ -16,7 +16,7 @@ print("API_SECRET:", API_SECRET)
 print("API_PASSPHRASE:", API_PASSPHRASE)
 
 # Inicializar el cliente de KuCoin
-client = TradeData(API_KEY, API_SECRET, API_PASSPHRASE)
+client = Trade(API_KEY, API_SECRET, API_PASSPHRASE)
 
 # Prueba de conexión
 try:
